@@ -81,7 +81,8 @@ function collisiongrid.CollisionGrid(rows, cols, factor_x, factor_y, margin_top,
             local cx = math.floor(x / this.xs * this.cols) + 1
             local cy = math.floor(y / this.ys * this.rows) + 1
             return performIfCellAvailable(cx, cy, function(cell)
-                body.on_position_change.remove(cell[body].pos_change_callback)
+                local cb = cell[body].pos_change_callback
+                body.on_position_change.remove(cb)
                 cell[body] = nil
             end)
         end
