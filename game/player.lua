@@ -1,6 +1,7 @@
 local player = {}
 
 delegate_mod = require "delegate"
+animation_mod = require "animation"
 --property_mod = require "property"
 
 function deepCopy(orig)
@@ -18,13 +19,26 @@ function deepCopy(orig)
     return copy
 end
 
+PlayerMetatable = {
+    __index = {
+        position = {
+            x = 0,
+            y = 0
+        },
+        speed = {
+            x = 0,
+            y = 0
+        }
+    }
+}
+
 function player.Player(pos_x, pos_y)
     if not pos_x then pos_x = 0 end
     if not pos_y then pos_y = 0 end
     local this = {
         speed = { x = 0, y = 0 },
         animations = {},
-        on_position_change = delegate_mod.Delegate()
+        on_position_change = delegate_mod.Delegate(),
     }
     local img = love.graphics.newImage(RESPATHS["player"])
     if not img then return end

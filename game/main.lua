@@ -7,6 +7,7 @@ PLAYER_DUPE_DIST = 96
 mod_player = require "player"
 mod_scene = require "scene"
 mod_collisiongrid = require "collisiongrid"
+mod_animation = require "animation"
 
 function configureResPaths()
     RESPATHS["player"] = "data/img/ball1.png"
