@@ -42,7 +42,7 @@ AnimationMetaTable =  {
             local cidx
             if self.current_point_idx == 0 then
                 cidx = 1
-            elseif self.points[self.current_point_idx + 1] ~=nil and self.points[self.current_point_idx + 1].time <= self.current_progress then
+            elseif self.points[self.current_point_idx + 1] ~= nil and self.points[self.current_point_idx + 1].time <= self.current_progress then
                 cidx = self.current_point_idx + 1
             else
                 cidx = self.current_point_idx
