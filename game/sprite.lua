@@ -2,48 +2,31 @@ local sprite = {}
 
 --local delegate_mod require "delegate"
 local vector_mod = require "vector"
+local deepclone_mod = require "deepclone"
 
 SpriteMetatable = {
     __index = {
         position = {},
-        channel = {},
-        setPosition = function(self, x, y)
-            local last = self.position:clone()
-            self.position.values[1] = x
-            self.position.values[2] = y
-            self.channel:push({
-                tag = "transform",
-                body = {
-                    transform_tyoe = "position",
-                    last = last,
-                    vec = vector.Vector{x, y}
-                }
-            })
-        end
-        move = function(self, x, y)
-            last = self.position:clone()
-            self.position.values[1] = position.values[1] + x
-            self.position.values[2] = position.values[2] + y
-            self.channel:push({
-                tag = "transform",
-                sender = self,
-                body = {
-                    transform_type = "translate",
-                    last = last
-                    vec = self.position:clone()
-                }
-            })
-
+        rotation = 0.0,
+        scale = {},
+        img = {},
+        draw = function(self)
+            love.graphics.draw(
+                self.img,
+                math.floor(self.position.values[1]), math.floor(self.position.values[2]),
+                self.rotation,
+                self.scale.values[1], self.scale.values[2],
+                self.img:getWidth() * self.scale.values[1] / 2.0, self.img:getHeight() * self.scale.values[2] / 2.0)
         end
     }
 }
+deepclone_mod.implementGenericClone(SpriteMetatable.__index)
 
-function sprite.Sprite(channel)
-    local s_channel = channel
-    if s_channel == nil then s_channel = love.thread.newChannel()
+function sprite.Sprite(image)
     local this = {
-        position = vector_mod.Vector{0.0, 0.0}
-        channel = s_channel
+        position = vector_mod.Vector{0.0, 0.0},
+        scale = vector_mod.Vector{1.0, 1.0},
+        img = image
     }
     setmetatable(this, SpriteMetatable)
     return this

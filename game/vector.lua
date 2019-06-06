@@ -4,28 +4,28 @@ local VectorMetatable = {
     __index = {
         clone = function(self)
             return vector.Vector(self.values)
+        end,
+        length = function(self)
+            local s = 0
+            for _, v in ipairs(self.values) do
+                s = s + v * v
+            end
+            return math.sqrt(s)
         end
     },
-    __len = function(t)
-        local s = 0
-        for _, v in ipairs(t.values) do
-            s = s + v * v
-        end
-        return math.sqrt(s)
-    end,
     __add = function(a, b)
         local t = {};
         for i=1, #a.values do
             t[i] = a.values[i] + b.values[i]
         end
-        return vec.Vector(t)
+        return vector.Vector(t)
     end,
     __sub = function(a, b)
         local t = {};
         for i=1, #a.values do
             t[i] = a.values[i] - b.values[i]
         end
-        return vec.Vector(t)
+        return vector.Vector(t)
     end,
     __mul = function (a, b)
         local function dot(a, b)
@@ -40,7 +40,7 @@ local VectorMetatable = {
             for i=1, #v.values do
                 t[i] = v.values[i] * s
             end
-            return vec.Vector(t)
+            return vector.Vector(t)
         end
         if type(a) == "number" then
             return scale(b, a)
@@ -55,7 +55,7 @@ local VectorMetatable = {
         for i=1, #v.values do
             t[i] = v.values[i] / s
         end
-        return vec.Vector(t)
+        return vector.Vector(t)
     end,
     __tostring = function(v)
         local t = { "(" }
@@ -68,6 +68,13 @@ local VectorMetatable = {
         table.insert(t, ")");
         return table.concat(t, "")
     end,
+    __eq = function(v1, v2)
+        if #v1.values ~= #v2.values then return false end
+        for i = 0, #v1.values do
+            if v1.values[i] ~= v2.values[i] then return false end
+        end
+        return true
+    end
 }
 
 function vector.Vector(t)
