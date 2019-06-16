@@ -11,6 +11,9 @@ local VectorMetatable = {
                 s = s + v * v
             end
             return math.sqrt(s)
+        end,
+        norm = function(self)
+            return self / self:length()
         end
     },
     __add = function(a, b)

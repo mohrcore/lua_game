@@ -1,8 +1,8 @@
 DEBUG = true
 RESPATHS = {}
 
-playerset_mod = require "playerset"
-vector_mod = require "vector"
+local playerset_mod = require "playerset"
+local vector_mod = require "vector"
 
 function configureResPaths()
     RESPATHS["player"] = "data/img/ball1.png"
@@ -29,15 +29,20 @@ function love.draw()
     end
 end
 
-key_down = {}
+KEY_DOWN = {}
 function pressedKey(key, f)
     if love.keyboard.isDown(key) then
-        if not key_down[key] then
+        if not KEY_DOWN[key] then
             f()
         end
-        key_down[key] = true
+        KEY_DOWN[key] = true
     else
-        key_down[key] = false
+        KEY_DOWN[key] = false
+    end
+end
+function downKey(key, f)
+    if love.keyboard.isDown(key) then
+        f()
     end
 end
 
@@ -45,11 +50,23 @@ function updatePlayer(dt)
     pressedKey("z", function()
         playerset:splitSprites(vector_mod.Vector{playerset.split_delta, 0.0})
     end)
-    pressedKey("right", function()
+--[[     pressedKey("right", function()
         playerset:moveSprites(vector_mod.Vector{playerset.move_delta, 0,0})
     end)
     pressedKey("left", function()
         playerset:moveSprites(vector_mod.Vector{-playerset.move_delta, 0,0})
+    end) ]]
+    downKey("right", function()
+        playerset:moveSprites(vector_mod.Vector{playerset.move_delta, 0,0} * dt * 10)
+    end)
+    downKey("left", function()
+        playerset:moveSprites(vector_mod.Vector{-playerset.move_delta, 0,0} * dt * 10)
+    end)
+    pressedKey("c", function()
+        for sprite, _ in pairs(playerset.player_sprites) do
+            playerset:moveSprite(sprite, vector_mod.Vector{0.0, -1.0 * playerset.move_delta})
+            break
+        end
     end)
 end
 
