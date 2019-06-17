@@ -13,4 +13,11 @@ function table_ext.mergeSets(t1, t2, ...)
     end
 end
 
+function table_ext.concatSeq(t1, t2)
+    local t1sz = #t1
+    for i = 1, #t2 do
+        t1[t1sz + i] = t2[i]
+    end
+end
+
 return table_ext

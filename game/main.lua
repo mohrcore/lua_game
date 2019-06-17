@@ -1,7 +1,8 @@
 DEBUG = true
 RESPATHS = {}
 
-local playerset_mod = require "playerset"
+local playercontroller_mod = require "playercontroller"
+local scene_mod = require "scene"
 local vector_mod = require "vector"
 
 function configureResPaths()
@@ -16,17 +17,19 @@ function love.load()
     local ww = love.graphics.getWidth()
     local wh = love.graphics.getHeight()
     configureResPaths()
-    playerset = playerset_mod.PlayerSet(ww, wh, vector_mod.Vector{ww / 2.0 ,wh / 2.0}, love.graphics.newImage(RESPATHS["player"]))
+    love.physics.setMeter(48)
+    scene = scene_mod.Scene()
+    player_controller = playercontroller_mod.PlayerController(scene)
+    player_controller:init(vector_mod.Vector{ww / 2.0, wh / 2.0})
 end
 
 function love.update(dt)
     updatePlayer(dt)
+    scene:update(dt)
 end
 
 function love.draw()
-    for sprite, _ in pairs(playerset.player_sprites) do
-        sprite:draw()
-    end
+    scene:drawActors()
 end
 
 KEY_DOWN = {}
@@ -47,32 +50,13 @@ function downKey(key, f)
 end
 
 function updatePlayer(dt)
-    pressedKey("z", function()
-        playerset:splitSprites(vector_mod.Vector{playerset.split_delta, 0.0})
-    end)
---[[     pressedKey("right", function()
-        playerset:moveSprites(vector_mod.Vector{playerset.move_delta, 0,0})
+    pressedKey("right", function()
+        player_controller:move(vector_mod.Vector{48.0, 0,0})
     end)
     pressedKey("left", function()
-        playerset:moveSprites(vector_mod.Vector{-playerset.move_delta, 0,0})
-    end) ]]
-    downKey("right", function()
-        playerset:moveSprites(vector_mod.Vector{playerset.move_delta, 0,0} * dt * 10)
+        player_controller:move(vector_mod.Vector{-48.0, 0,0})
     end)
-    downKey("left", function()
-        playerset:moveSprites(vector_mod.Vector{-playerset.move_delta, 0,0} * dt * 10)
+    pressedKey("z", function()
+        player_controller:split(vector_mod.Vector{96, 0.0})
     end)
-    pressedKey("c", function()
-        for sprite, _ in pairs(playerset.player_sprites) do
-            playerset:moveSprite(sprite, vector_mod.Vector{0.0, -1.0 * playerset.move_delta})
-            break
-        end
-    end)
-end
-
-function table.concatSeq(t1, t2)
-    local t1sz = #t1
-    for i = 1, #t2 do
-        t1[t1sz + i] = t2[i]
-    end
 end
