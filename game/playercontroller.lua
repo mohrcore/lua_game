@@ -9,13 +9,15 @@ local player_heart_shape = love.physics.newCircleShape(0.1)
 
 
 local function makePlayerBodies(scene, position, shelldata, heartdata)
-    local shell = love.physics.newBody(scene.box2dworld, position.values[1], position.values[2], "dynamic")
+    local px, py = position:unpack()
+    print("player bodies: [x: " .. px .. " y: " .. py .. "]")
+    local shell = love.physics.newBody(scene.box2dworld, px, py, "dynamic")
     shell:setUserData(shelldata)
     local shell_fixture = love.physics.newFixture(shell, player_shell_shape)
-    local heart = love.physics.newBody(scene.box2dworld, position.values[1], position.values[2], "dynamic")
+    local heart = love.physics.newBody(scene.box2dworld, px, py, "dynamic")
     heart:setUserData(heartdata)
     local heart_fixture = love.physics.newFixture(heart, player_heart_shape)
-    local pjoint = love.physics.newWeldJoint(shell, heart, position.values[1], position.values[2], false)
+    local pjoint = love.physics.newWeldJoint(shell, heart, px, py, false)
     return shell, heart, {shell_fixture, heart_fixture, pjoint}
 end
 
@@ -41,6 +43,13 @@ local function createPlayerShellData(actor, pc)
         end,
         collides = function(other_body)
             collides(collides_with, other_body)
+        end,
+        destroyMe = function()
+            pc.scene.actors[actor] = nil
+            pc.actors[actor] = nil
+            for _, body in ipairs(actor.bodies) do
+                body:destroy()
+            end
         end
     }
 end
@@ -65,6 +74,13 @@ local function createPlayerHeartData(actor, pc)
         end,
         collides = function(other_body)
             collides(collides_with, other_body)
+        end,
+        destroyMe = function()
+            pc.scene.actors[actor] = nil
+            pc.actors[actor] = nil
+            for _, body in ipairs(actor.bodies) do
+                body:destroy()
+            end
         end
     }
 end
@@ -91,7 +107,7 @@ local PlayerControllerMetatable = {
             local meter = love.physics.getMeter()
             local player_img = love.graphics.newImage(RESPATHS["player"])
             local sprite = sprite_mod.Sprite(player_img)
-            sprite.position = position
+            sprite.position = position:clone()
             local actor = {
                 sprite = sprite
             }
@@ -120,13 +136,12 @@ local PlayerControllerMetatable = {
             local meter = love.physics.getMeter()
             local clones = {}
             for actor, _ in pairs(self.actors) do
-                local dpx = vec.values[1] / meter
-                local dpy = vec.values[2] / meter
+                local dpx, dpy = (vec / meter):unpack()
                 local shell = actor.bodies[1]
-                local clone = clonePlayerActor(actor, self, vector_mod.Vector{shell:getPosition()} - vector_mod.Vector{dpx, dpy})
+                local heart = actor.bodies[2]
+                local clone = clonePlayerActor(actor, self, vector_mod.Vector{heart:getPosition()} - vector_mod.Vector{dpx, dpy})
                 clones[clone] = true
                 self.scene.actors[clone] = true
-                local heart = actor.bodies[2]
                 local clone_shell = clone.bodies[1]
                 local clone_heart = clone.bodies[2]
                 local cpx, cpy = shell:getPosition()

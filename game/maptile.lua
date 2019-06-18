@@ -1,58 +1,78 @@
 local maptile  = {}
 
 local vector_mod = require "vector"
+local table_ext_mod = require "table_ext"
+local multisprite_mod = require "multisprite"
 
-MapTileMetatable = {
-    __index = {
-        functionality = {},
-        image = {}
-    }
+local tile_layers = {
+    "tile_hole",
+    "tile_wall"
 }
 
-function maptile.MapTile(functionality, image)
-    local this = {}
-    setmetatable(this, MapTileMetatable)
-    return this
+local resources = {}
+
+function maptile.loadResources()
+    local paths = table_ext_mod.mapSeq(tile_layers, function(name)
+        return RESPATHS[name]
+    end)
+    local tile_array_img = love.graphics.newArrayImage(paths)
+    tile_array_img:setWrap("repeat", "repeat")
+    resources["tile_array_img"] = tile_array_img
 end
 
-HoleMetatable = {
-    __index = {
-        solid = false,
-        onPlayerCollision = function(self, playerset, instance)
-            instance:remove()
-        end
-    }
-}
-ArrowMetatable = {
-    __index = {
-        solid = false,
-        distance = 1,
-        direction = "up",
-        onPlayerCollision = function(self, playerset, instance)
-            local dvec
-            if self.direction == "up" then
-                dvec = vector_mod.Vector{0.0, -1.0}
-            elseif self.direction == "down" then
-                dvec = vector_mod.Vector{0.0, 1.0}
-            elseif self.direction == "left" then
-                dvec = vector_mod.Vector{-1.0, 0.0}
-            elseif self.direction == "right" then
-                dvec = vector_mod.Vector{1.0, 0.0}
+local square_tileshape = love.physics.newRectangleShape(1, 1)
+
+local function makeTileBody(world, position, w, h)
+    local px, py = (position / love.physics.getMeter()):unpack()
+    print("tile body: [x: " .. px .. " y: " .. py .. "]")
+    local body = love.physics.newBody(world, px, py, "dynamic")
+    local tileshape
+    if w == 1 and h == 1 then
+        tileshape = square_tileshape
+    else
+        tileshape = love.physics.newRectangleShape(w / 2.0 - 0.5, h / 2.0 - 0.5, w, h)
+    end
+    local fixture = love.physics.newFixture(body, tileshape)
+    return body, {fixture}
+end
+
+local function collides(ctable, other_body)
+    local ob_data = other_body:getUserData()
+    if not ob_data then return false end
+    if ctable[ob_data.collision_tag] then
+        return true
+    end
+    return false
+end
+
+function maptile.Hole(scene, position, w, h)
+    local body, refs = makeTileBody(scene.box2dworld, position, w, h)
+    local sprite = multisprite_mod.MultiSprite(resources["tile_array_img"], 1, position)
+    sprite.rows = h
+    sprite.columns = w
+    body:setUserData({
+        tag = "hole",
+        collision_tag = "pass-through",
+        collides_with = {},
+        onCollision = function(other_body, id)
+            local ob_udata = other_body:getUserData()
+            if not ob_udata then return end
+            if ob_udata.tag == "player_instance_heart" then
+                print "doopa"
+                ob_udata:destroyMe()
             end
-            instance:move(dvec * (playerset.move_delta * distance))
+        end,
+        collides = function(other_body)
+            return collides({}, other_body)
         end
+    })
+    local actor = {
+        sprite = sprite,
+        body = body,
+        refs  = refs
     }
-}
-WallMetatable = {
-    __index = {
-        solid = true
-    }
-}
-FloorMetatable = {
-    __index = {
-        solid = false
-    }
-}
+    return actor
+end
 
 
 return maptile

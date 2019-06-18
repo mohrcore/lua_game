@@ -49,14 +49,18 @@ function scene.Scene()
         local body2 = fixture2:getBody()
         local body1_udata = body1:getUserData()
         local body2_udata = body2:getUserData()
+        local c = false
         if body1_udata and not body1_udata.collides(body2) then
             contact:setEnabled(false)
             body1_udata.onCollision(body2, 1)
+            c = true
         end
         if body2_udata and not body2_udata.collides(body1) then
             contact:setEnabled(false)
             body2_udata.onCollision(body1, 2)
+            c = true
         end
+        if not c then print "wtf" end
 --[[         if contact:getEnabled() then
             print "doopa"
         end ]]

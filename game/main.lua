@@ -5,8 +5,12 @@ local playercontroller_mod = require "playercontroller"
 local scene_mod = require "scene"
 local vector_mod = require "vector"
 
+local maptile_mod = require "maptile"
+
 function configureResPaths()
     RESPATHS["player"] = "data/img/ball1.png"
+    RESPATHS["tile_hole"] = "data/img/tiles/hole.png"
+    RESPATHS["tile_wall"] = "data/img/tiles/wall.png"
 end
 
 function love.conf(t)
@@ -17,8 +21,11 @@ function love.load()
     local ww = love.graphics.getWidth()
     local wh = love.graphics.getHeight()
     configureResPaths()
+    maptile_mod.loadResources()
     love.physics.setMeter(48)
     scene = scene_mod.Scene()
+    test_hole = maptile_mod.Hole(scene, vector_mod.Vector{48, 288}, 1, 1)
+    scene.actors[test_hole] = true
     player_controller = playercontroller_mod.PlayerController(scene)
     player_controller:init(vector_mod.Vector{ww / 2.0, wh / 2.0})
 end

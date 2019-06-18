@@ -20,4 +20,12 @@ function table_ext.concatSeq(t1, t2)
     end
 end
 
+function table_ext.mapSeq(seq, fun)
+    local result = {}
+    for i = 1, #seq do
+        result[i] = fun(seq[i])
+    end
+    return result
+end
+
 return table_ext

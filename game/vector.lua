@@ -14,6 +14,9 @@ local VectorMetatable = {
         end,
         norm = function(self)
             return self / self:length()
+        end,
+        unpack = function(self)
+            return unpack(self.values)
         end
     },
     __add = function(a, b)
