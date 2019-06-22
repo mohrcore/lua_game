@@ -91,9 +91,9 @@ local PlayerControllerMetatable = {
         init = function(self, position)
             self.instances[position] = true
         end,
-        move = function(self, vec)
+        move = function(self, vec, instance)
             local dx, dy = vec:unpack()
-            for position, _ in pairs(self.instances) do
+            local mov_fn = function(position)
                 local to = position + vector_mod.Vector{dx, dy}
                 self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
                 self.instance_count_hm[hashCellPosition(to)] = self.instance_count_hm[hashCellPosition(to)] + 1
@@ -107,6 +107,13 @@ local PlayerControllerMetatable = {
                 if move_info.move_ahead then
                     position.values[2] = position.values[2] + dy
                 end
+            end
+            if instance == nil then
+                for position, _ in pairs(self.instances) do
+                    mov_fn(position)
+                end
+            else
+                mov_fn(instance)
             end
         end,
         split = function(self, vec)
@@ -140,7 +147,7 @@ local PlayerControllerMetatable = {
                     self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
                 else
                     if ul_result.move then
-                        self:move(ul_result.move)
+                        self:move(ul_result.move, position)
                         --self:update() --?
                     end
                 end

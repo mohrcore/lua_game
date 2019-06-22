@@ -24,8 +24,8 @@ local PlayerRendererMetatable = {
                     math.floor(self.position.values[1]), math.floor(self.position.values[2]),
                     self.rotation,
                     self.scale.values[1], self.scale.values[2],
-                    self.center.values[1] * self.columns * tw - ((xpos - 1) * tw - x),
-                    self.center.values[2] * self.rows * th - ((ypos - 1) * th - y)
+                    math.floor(self.center.values[1] * self.columns * tw - ((xpos - 1) * tw - x)),
+                    math.floor(self.center.values[2] * self.rows * th - ((ypos - 1) * th - y))
             )
             end
         end

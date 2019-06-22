@@ -3,21 +3,13 @@ RESPATHS = {}
 
 local scene_mod = require "scene"
 local vector_mod = require "vector"
+local resources_mod = require "resources"
 
 local maptile_mod = require "maptile"
 local gamemap_mod = require "gamemap"
 local playercontroller_mod = require "playercontroller"
 local playerrenderer_mod = require "playerrenderer"
-
-function configureResPaths()
-    RESPATHS["player"] = "data/img/ball1.png"
-    RESPATHS["tile_hole"] = "data/img/tiles/hole.png"
-    RESPATHS["tile_wall"] = "data/img/tiles/wall.png"
-    RESPATHS["tile_arrow_left"] = "data/img/tiles/arrow_left.png"
-    RESPATHS["tile_arrow_right"] = "data/img/tiles/arrow_right.png"
-    RESPATHS["tile_arrow_up"] = "data/img/tiles/arrow_up.png"
-    RESPATHS["tile_star"] = "data/img/tiles/star.png"
-end
+local cameracontroller_mod = require "cameracontroller"
 
 function love.conf(t)
     t.console = DEBUG
@@ -26,19 +18,19 @@ end
 function love.load()
     local ww = love.graphics.getWidth()
     local wh = love.graphics.getHeight()
-    configureResPaths()
+    resources_mod.configureResPaths()
     maptile_mod.loadResources()
     love.physics.setMeter(48)
     scene = scene_mod.Scene()
-    local gamemap = gamemap_mod.GameMap("data/maps/testmap1.map")
+    local gamemap = gamemap_mod.GameMap("data/maps/testmap3.map")
     gamemap_renderer = gamemap_mod.GameMapRenderer(gamemap, maptile_mod.getTileset())
-    scene:setCamera(vector_mod.Vector{0.0, gamemap_renderer:getPixelHeight() / 2.0})
+    scene:setCamera(vector_mod.Vector{0.0, #gamemap.layer1 * gamemap_renderer.tileset:getHeight() / 2.0})
     --gamemap_renderer.rotation = 0.3
     gamemap_renderer.position = vector_mod.Vector{ww / 2.0, wh / 2.0}
     gamemap_renderer.scale = vector_mod.Vector{1, 1}
-    --gamemap_renderer.columns = 6
-    --gamemap_renderer.rows = 6
-    gamemap_renderer.camera = camera
+    gamemap_renderer.columns = 19
+    gamemap_renderer.rows = 15
+    gamemap_renderer.camera = scene.camera
     local gm_actor = {
         drawable = gamemap_renderer
     }
@@ -54,20 +46,22 @@ function love.load()
     --player_renderer.rotation = 0.3
     player_renderer.position = vector_mod.Vector{ww / 2.0, wh / 2.0}
     player_renderer.scale = vector_mod.Vector{1, 1}
-    player_renderer.camera = camera
+    player_renderer.camera = scene.camera
     local pr_actor = {
         drawable = player_renderer
     }
     scene:addActor(pr_actor)
-    --player_controller = playercontroller_mod.PlayerController(scene)
-    --player_controller:init(vector_mod.Vector{ww / 2.0, wh / 2.0})
+    camera_controller = cameracontroller_mod.CameraController(scene.camera, player_controller, gamemap_renderer)
 end
 
 function love.update(dt)
     local speed = 150.0
-    scene.camera.values[2] = scene.camera.values[2] - speed * dt
+    local speed_vec = vector_mod.Vector{0, -150}
     player_controller:move(vector_mod.Vector{0.0, -speed * dt / gamemap_renderer.tileset:getHeight()})
     updatePlayer(dt)
+    camera_controller:update(dt, speed_vec)
+    
+    
     --scene:update(dt)
 end
 

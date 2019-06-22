@@ -98,10 +98,10 @@ GameMapRendererMetatable = {
             if self.gamemap.layer1[1] == nil then return end --empty gamemap
             local columns = self.columns
             local rows = self.rows
-            if columns <= 0 or columns > self.gamemap.columns then
+            if columns <= 0 then
                 columns = self.gamemap.columns
             end
-            if rows <= 0 or rows > #self.gamemap.layer1 then
+            if rows <= 0 then
                 rows = #self.gamemap.layer1
             end
             local tw = self.tileset:getWidth()
@@ -118,8 +118,8 @@ GameMapRendererMetatable = {
                                 math.floor(self.position.values[1]), math.floor(self.position.values[2]),
                                 self.rotation,
                                 self.scale.values[1], self.scale.values[2],
-                                self.center.values[1] * columns * tw - ((j - 1) * tw - (x % tw)),
-                                self.center.values[2] * rows * th - ((i - 1) * th - (y % th))
+                                math.floor(self.center.values[1] * columns * tw - ((j - 1) * tw - (x % tw))),
+                                math.floor(self.center.values[2] * rows * th - ((i - 1) * th - (y % th)))
                             )
                         end
                     end
@@ -140,7 +140,7 @@ GameMapRendererMetatable = {
             if rows <= 0 or rows > #self.gamemap.layer1 then
                 rows = #self.gamemap.layer1
             end
-            return rows * self.tileset:getWidth()
+            return rows * self.tileset:getHeight()
         end,
     }
 }
