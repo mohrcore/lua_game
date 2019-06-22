@@ -6,7 +6,11 @@ local multisprite_mod = require "multisprite"
 
 local tile_layers = {
     "tile_hole",
-    "tile_wall"
+    "tile_wall",
+    "tile_arrow_left",
+    "tile_arrow_right",
+    "tile_arrow_up",
+    "tile_star"
 }
 
 local resources = {}
@@ -20,59 +24,42 @@ function maptile.loadResources()
     resources["tile_array_img"] = tile_array_img
 end
 
-local square_tileshape = love.physics.newRectangleShape(1, 1)
+local tile_layers = {
+    hole = 1,
+    wall = 2,
+    arrow_left = 3,
+    arrow_right = 4,
+    arrow_up = 5,
+    star = 6
+}
 
-local function makeTileBody(world, position, w, h)
-    local px, py = (position / love.physics.getMeter()):unpack()
-    print("tile body: [x: " .. px .. " y: " .. py .. "]")
-    local body = love.physics.newBody(world, px, py, "dynamic")
-    local tileshape
-    if w == 1 and h == 1 then
-        tileshape = square_tileshape
+local tile_type_props_to_layer_name = {
+    arrow = function(props)
+        local direction_to_layer_name_map = {
+            left = "arrow_left",
+            right = "arrow_right",
+            up = "arrow_up"
+        }
+        return direction_to_layer_name_map[props.direction]
+    end
+}
+
+function maptile.MapTile(tile_type, properties)
+    local layer_name
+    if properties and tile_type_props_to_layer_name[tile_type] then
+        layer_name = tile_type_props_to_layer_name[tile_type](properties)
     else
-        tileshape = love.physics.newRectangleShape(w / 2.0 - 0.5, h / 2.0 - 0.5, w, h)
+        layer_name = tile_type
     end
-    local fixture = love.physics.newFixture(body, tileshape)
-    return body, {fixture}
-end
-
-local function collides(ctable, other_body)
-    local ob_data = other_body:getUserData()
-    if not ob_data then return false end
-    if ctable[ob_data.collision_tag] then
-        return true
-    end
-    return false
-end
-
-function maptile.Hole(scene, position, w, h)
-    local body, refs = makeTileBody(scene.box2dworld, position, w, h)
-    local sprite = multisprite_mod.MultiSprite(resources["tile_array_img"], 1, position)
-    sprite.rows = h
-    sprite.columns = w
-    body:setUserData({
-        tag = "hole",
-        collision_tag = "pass-through",
-        collides_with = {},
-        onCollision = function(other_body, id)
-            local ob_udata = other_body:getUserData()
-            if not ob_udata then return end
-            if ob_udata.tag == "player_instance_heart" then
-                print "doopa"
-                ob_udata:destroyMe()
-            end
-        end,
-        collides = function(other_body)
-            return collides({}, other_body)
-        end
-    })
-    local actor = {
-        sprite = sprite,
-        body = body,
-        refs  = refs
+    return {
+        layer = tile_layers[layer_name],
+        type = tile_type,
+        props = properties
     }
-    return actor
 end
 
+function maptile.getTileset()
+    return resources["tile_array_img"]
+end
 
 return maptile

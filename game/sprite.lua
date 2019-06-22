@@ -4,7 +4,7 @@ local sprite = {}
 local vector_mod = require "vector"
 local deepclone_mod = require "deepclone"
 
-SpriteMetatable = {
+local SpriteMetatable = {
     __index = {
         position = {},
         rotation = 0.0,

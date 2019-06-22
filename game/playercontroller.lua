@@ -4,162 +4,166 @@ local vector_mod = require "vector"
 local sprite_mod = require "sprite"
 local table_ext_mod = require "table_ext"
 
-local player_shell_shape = love.physics.newCircleShape(0.5)
-local player_heart_shape = love.physics.newCircleShape(0.1)
-
-
-local function makePlayerBodies(scene, position, shelldata, heartdata)
-    local px, py = position:unpack()
-    print("player bodies: [x: " .. px .. " y: " .. py .. "]")
-    local shell = love.physics.newBody(scene.box2dworld, px, py, "dynamic")
-    shell:setUserData(shelldata)
-    local shell_fixture = love.physics.newFixture(shell, player_shell_shape)
-    local heart = love.physics.newBody(scene.box2dworld, px, py, "dynamic")
-    heart:setUserData(heartdata)
-    local heart_fixture = love.physics.newFixture(heart, player_heart_shape)
-    local pjoint = love.physics.newWeldJoint(shell, heart, px, py, false)
-    return shell, heart, {shell_fixture, heart_fixture, pjoint}
-end
-
-local function collides(ctable, other_body)
-    local ob_data = other_body:getUserData()
-    if not ob_data then return false end
-    if ctable[ob_data.collision_tag] then
-        return true
+local function moveLogic(tile_ahead, tile_destination, tile_ahead_destination)
+    local move_info = {
+        move_ahead = true,
+        move_side = true
+    }
+    if tile_ahead and tile_ahead.type == "wall" then
+        move_info.move_ahead = false
     end
-    return false
+    if (tile_destination and tile_destination.type == "wall")
+    or (tile_ahead_destination and tile_ahead_destination.type == "wall") then
+        move_info.move_side = false
+    end
+    return move_info
 end
 
-local function createPlayerShellData(actor, pc)
-    local collides_with = {
-        solid = true,
-        player_barrier = true
+--[[ local function splitLogic(tile_destination1, tile_destination2, tile_ahead_destination1, tile_ahead_destination2)
+    local split_info = {
+        
     }
-    return {
-        tag = "player_instance",
-        collision_tag = "player",
-        collides_with = collides_with,
-        onCollision = function(other_body, id) --id is used to disinguish two colliding bodies
-        end,
-        collides = function(other_body)
-            collides(collides_with, other_body)
-        end,
-        destroyMe = function()
-            pc.scene.actors[actor] = nil
-            pc.actors[actor] = nil
-            for _, body in ipairs(actor.bodies) do
-                body:destroy()
-            end
+end ]]
+
+local function hashCellPosition(position)
+    return math.floor(position.values[2]) % 128 + math.floor(position.values[1] * 128) --player nstances should get further away from themselves than 128 tiles,
+end
+
+local function updateLogic(tile, tile_ahead, another_instance_present)
+    local ctrl = {
+        destroy = false,
+        move = nil,
+        remove_tile = false,
+        add_score = 0,
+    }
+    if another_instance_present then
+        ctrl.destroy = true
+        return ctrl
+    end
+    if tile and tile.type == "hole" then
+        ctrl.destroy = true
+    end
+    if tile and tile.type == "wall" then
+        ctrl.destroy = true
+    end
+    if tile_ahead and tile_ahead.type == "wall" then
+        ctrl.destroy = true
+    end
+    if tile and tile.type == "arrow" then
+        local move_vec
+        if tile.props.direction == "left" then
+            move_vec = vector_mod.Vector{-1, 0}
+        elseif tile.props.direction == "right" then
+            move_vec = vector_mod.Vector{1, 0}
+        elseif tile.props.direction == "up" then
+            move_vec = vector_mod.Vector{0, -1}
         end
-    }
+        ctrl.move = move_vec
+    end
+    if ctrl.move then
+        ctrl.destroy = false
+    end
+    if tile and tile.type == "star" then
+        ctrl.add_score = 1
+        ctrl.remove_tile = true
+    end
+    return ctrl
 end
 
-local function createPlayerHeartData(actor, pc)
-    local collides_with = {}
-    return {
-        tag = "player_instance_heart",
-        collisiton_tag = "player_heart",
-        collides_with = collides_with,
-        onCollision = function(other_body, id) --id is used to disinguish two colliding bodies
-            local ob_data = other_body:getUserData()
-            if not (ob_data and ob_data.tag) then return end
-            if ob_data.tag == "player_instance_heart" and id == 2 then
-                print "rmvd!"
-                pc.scene.actors[actor] = nil --remove instance with id == 2
-                pc.actors[actor] = nil
-                for _, body in ipairs(actor.bodies) do
-                    body:destroy()
-                end
-            end
-        end,
-        collides = function(other_body)
-            collides(collides_with, other_body)
-        end,
-        destroyMe = function()
-            pc.scene.actors[actor] = nil
-            pc.actors[actor] = nil
-            for _, body in ipairs(actor.bodies) do
-                body:destroy()
-            end
-        end
-    }
+local function getTile(pc, x, y)
+    if not pc.gamemap.layer1[y] then return nil end
+    return pc.gamemap.layer1[y][x]
 end
 
-local function clonePlayerActor(actor, pc, position)
-    local meter = love.physics.getMeter()
-    local clone = {}
-    clone.sprite = actor.sprite:clone()
-    clone.sprite.position = position * meter
-    local shell_data = createPlayerShellData(clone, pc)
-    local heart_data = createPlayerHeartData(clone, pc)
-    local clone_shell, clone_heart, refs = makePlayerBodies(scene, position, shell_data, heart_data)
-    clone.bodies = {clone_shell, clone_heart}
-    clone.refs = refs
-    return clone
+local function getTileAhead(pc, x, y)
+    if y == math.ceil(y) then
+        return getTile(pc, math.ceil(x), y)
+    end
+    return getTile(pc, math.ceil(x), math.floor(y))
 end
 
 local PlayerControllerMetatable = {
     __index = {
-        scene = {},
-        actors = {},
+        gamemap = {},
+        instances = {},
+        instance_count_hm = {},
+        score = 0,
         init = function(self, position)
-            self.actors = {}
-            local meter = love.physics.getMeter()
-            local player_img = love.graphics.newImage(RESPATHS["player"])
-            local sprite = sprite_mod.Sprite(player_img)
-            sprite.position = position:clone()
-            local actor = {
-                sprite = sprite
-            }
-            local shell_data = createPlayerShellData(actor, self)
-            local heart_data = createPlayerHeartData(actor, self)
-            local player_shell, player_heart, refs = makePlayerBodies(self.scene, position / meter, shell_data, heart_data)
-            actor.bodies = {player_shell, player_heart}
-            actor.refs = refs
-            self.actors[actor] = true
-            self.scene.actors[actor] = true
+            self.instances[position] = true
         end,
         move = function(self, vec)
-            local meter = love.physics.getMeter()
-            for actor, _ in pairs(self.actors) do
-                local shell = actor.bodies[1]
-                local heart = actor.bodies[2]
-                local cpx, cpy = shell:getPosition()
-                local npx = cpx + vec.values[1] / meter
-                local npy = cpy + vec.values[2] / meter
-                heart:setPosition(npx, npy)
-                shell:setPosition(npx, npy)
+            local dx, dy = vec:unpack()
+            for position, _ in pairs(self.instances) do
+                local to = position + vector_mod.Vector{dx, dy}
+                self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
+                self.instance_count_hm[hashCellPosition(to)] = self.instance_count_hm[hashCellPosition(to)] + 1
+                local tile_destination = getTile(self, math.ceil(position.values[1] + dx), math.ceil(position.values[2] + dy))
+                local tile_ahead = getTileAhead(self, position.values[1], position.values[2])
+                local tile_ahead_destination = getTileAhead(self, position.values[1] + dx, position.values[2] + dy)
+                local move_info = moveLogic(tile_ahead, tile_destination, tile_ahead_destination)
+                if move_info.move_side then
+                    position.values[1] = position.values[1] + dx
+                end
+                if move_info.move_ahead then
+                    position.values[2] = position.values[2] + dy
+                end
             end
         end,
         split = function(self, vec)
-            print "split!"
-            local meter = love.physics.getMeter()
-            local clones = {}
-            for actor, _ in pairs(self.actors) do
-                local dpx, dpy = (vec / meter):unpack()
-                local shell = actor.bodies[1]
-                local heart = actor.bodies[2]
-                local clone = clonePlayerActor(actor, self, vector_mod.Vector{heart:getPosition()} - vector_mod.Vector{dpx, dpy})
-                clones[clone] = true
-                self.scene.actors[clone] = true
-                local clone_shell = clone.bodies[1]
-                local clone_heart = clone.bodies[2]
-                local cpx, cpy = shell:getPosition()
-                heart:setPosition(cpx + dpx, cpy + dpy)
-                shell:setPosition(cpx + dpx, cpy + dpy)
-                --clone_heart:setPosition(cpx - dpx, cpy - dpy)
-                --clone_shell:setPosition(cpx - dpx, cpy - dpy)
+            --local dx, dy = vec:unpack()
+            local newpositions = {}
+            for position, _ in pairs(self.instances) do
+                local clone = position:clone()
+                local new_position = position + vec
+                local new_clone_position = position - vec
+                self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
+                self.instance_count_hm[hashCellPosition(new_position)] = self.instance_count_hm[hashCellPosition(new_position)] + 1
+                self.instance_count_hm[hashCellPosition(new_clone_position)] = self.instance_count_hm[hashCellPosition(new_clone_position)] + 1
+                position.values[1] = position.values[1] + vec.values[1]
+                position.values[2] = position.values[2] + vec.values[2]
+                clone = new_clone_position
+                newpositions[clone] = true
             end
-            table_ext_mod.mergeSets(self.actors, clones)
+            table_ext_mod.mergeSets(self.instances, newpositions)
+        end,
+        update = function(self)
+            for position, _ in pairs(self.instances) do
+                local tile = getTile(self, math.ceil(position.values[1]), math.ceil(position.values[2]))
+                local tile_ahead = getTileAhead(self, position.values[1], position.values[2])
+                local another_instance_present = false
+                if self.instance_count_hm[hashCellPosition(position)] > 1 then
+                    another_instance_present = true
+                end
+                local ul_result = updateLogic(tile, tile_ahead, another_instance_present)
+                if ul_result.destroy == true then
+                    self.instances[position] = nil
+                    self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
+                else
+                    if ul_result.move then
+                        self:move(ul_result.move)
+                        --self:update() --?
+                    end
+                end
+                if ul_result.remove_tile then
+                    self.gamemap.layer1[math.ceil(position.values[2])][math.ceil(position.values[1])] = nil
+                end
+                self.score = self.score + ul_result.add_score
+            end
         end
     }
 }
 
-function playercontroller.PlayerController(scene)
+function playercontroller.PlayerController(gamemap)
     local this = {
-        scene = scene
+        gamemap = gamemap,
+        instances = {}
     }
     setmetatable(this, PlayerControllerMetatable)
+    setmetatable(this.instance_count_hm, {
+        __index = function(self, k)
+            return 0;
+        end,
+    })
     return this
 end
 
