@@ -190,7 +190,6 @@ local PlayerControllerMetatable = {
                     if self.finishing then
                         self.onWin()
                     else
-                        print "baba"
                         self.onLose()
                     end
                 end
