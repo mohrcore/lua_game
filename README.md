@@ -1,7 +1,9 @@
 Lua Course Project (game)
 =========================
+Krzysztof Boroński
+------------------
 
-Cool game I guess.
+Cool game, I guess.
 
 Left/right to move player instances
 Z to split
