@@ -10,7 +10,8 @@ local tile_layers = {
     "tile_arrow_left",
     "tile_arrow_right",
     "tile_arrow_up",
-    "tile_star"
+    "tile_star",
+    "tile_finish"
 }
 
 local resources = {}
@@ -30,7 +31,8 @@ local tile_layers = {
     arrow_left = 3,
     arrow_right = 4,
     arrow_up = 5,
-    star = 6
+    star = 6,
+    finish = 7
 }
 
 local tile_type_props_to_layer_name = {

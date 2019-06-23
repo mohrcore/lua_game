@@ -25,6 +25,7 @@ local GameMapMetatable = {
 }
 
 local char_to_tile = {
+    -- easily readable symbols
     ['.'] = {"empty"},
     ['o'] = {"hole"},
     ['#'] = {"wall"},
@@ -32,7 +33,17 @@ local char_to_tile = {
     ['>'] = {"arrow", {direction = "right"}},
     ['A'] = {"arrow", {direction = "up"}},
     ['P'] = {"player_start"},
-    ['*'] = {"star"}
+    ['*'] = {"star"},
+    ['M'] = {"finish"},
+    --alternative symbols for quicker map eiting
+    [' '] = {"empty"},
+    ['x'] = {"hole"},
+    ['z'] = {"wall"},
+    ['a'] = {"arrow", {direction = "left"}},
+    ['d'] = {"arrow", {direction = "right"}},
+    ['w'] = {"arrow", {direction = "up"}},
+    ['P'] = {"player_start"},
+    ['c'] = {"star"}
 }
 
 local function loadGameMapFromFile(path)

@@ -29,19 +29,26 @@ local function hashCellPosition(position)
     return math.floor(position.values[2]) % 128 + math.floor(position.values[1] * 128) --player nstances should get further away from themselves than 128 tiles,
 end
 
-local function updateLogic(tile, tile_ahead, another_instance_present)
+local function cutBackedge(tile, tile_ahead, ib)
+    return ib < 0.5 or (tile_ahead and tile_ahead.type == tile.type)
+end
+
+local function updateLogic(tile, tile_ahead, another_instance_present, ib)
     local ctrl = {
         destroy = false,
         move = nil,
         remove_tile = false,
         add_score = 0,
+        finish = false,
     }
     if another_instance_present then
         ctrl.destroy = true
         return ctrl
     end
     if tile and tile.type == "hole" then
-        ctrl.destroy = true
+        if cutBackedge(tile, tile_ahead, ib) then
+            ctrl.destroy = true
+        end
     end
     if tile and tile.type == "wall" then
         ctrl.destroy = true
@@ -50,15 +57,17 @@ local function updateLogic(tile, tile_ahead, another_instance_present)
         ctrl.destroy = true
     end
     if tile and tile.type == "arrow" then
-        local move_vec
-        if tile.props.direction == "left" then
-            move_vec = vector_mod.Vector{-1, 0}
-        elseif tile.props.direction == "right" then
-            move_vec = vector_mod.Vector{1, 0}
-        elseif tile.props.direction == "up" then
-            move_vec = vector_mod.Vector{0, -1}
+        if cutBackedge(tile, tile_ahead, ib) then
+            local move_vec
+            if tile.props.direction == "left" then
+                move_vec = vector_mod.Vector{-1, 0}
+            elseif tile.props.direction == "right" then
+                move_vec = vector_mod.Vector{1, 0}
+            elseif tile.props.direction == "up" then
+                move_vec = vector_mod.Vector{0, -1}
+            end
+            ctrl.move = move_vec
         end
-        ctrl.move = move_vec
     end
     if ctrl.move then
         ctrl.destroy = false
@@ -66,6 +75,10 @@ local function updateLogic(tile, tile_ahead, another_instance_present)
     if tile and tile.type == "star" then
         ctrl.add_score = 1
         ctrl.remove_tile = true
+    end
+    if tile and tile.type == "finish" then
+        ctrl.finish = true
+        ctrl.destroy = true
     end
     return ctrl
 end
@@ -89,9 +102,13 @@ local PlayerControllerMetatable = {
         instance_count_hm = {},
         instance_count = 0,
         score = 0,
+        finishing = false,
+        onWin = function() end,
+        onLose = function() end,
         init = function(self, position)
             self.instances[position] = true
             self.instance_count_hm = {}
+            self.finishing = false
             setmetatable(self.instance_count_hm, {
                 __index = function(self, k)
                     return 0;
@@ -150,7 +167,8 @@ local PlayerControllerMetatable = {
                 if self.instance_count_hm[hashCellPosition(position)] > 1 then
                     another_instance_present = true
                 end
-                local ul_result = updateLogic(tile, tile_ahead, another_instance_present)
+                local ib = math.ceil(position.values[2]) - position.values[2]
+                local ul_result = updateLogic(tile, tile_ahead, another_instance_present, ib)
                 if ul_result.destroy == true then
                     self.instances[position] = nil
                     self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
@@ -164,7 +182,18 @@ local PlayerControllerMetatable = {
                 if ul_result.remove_tile then
                     self.gamemap.layer1[math.ceil(position.values[2])][math.ceil(position.values[1])] = nil
                 end
+                if ul_result.finish then
+                    self.finishing = true
+                end
                 self.score = self.score + ul_result.add_score
+                if self.instance_count == 0 then
+                    if self.finishing then
+                        self.onWin()
+                    else
+                        print "baba"
+                        self.onLose()
+                    end
+                end
             end
         end
     }

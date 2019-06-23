@@ -31,12 +31,12 @@ local CameraControllerMetatable = {
             self.camera.values[2] = nposy
             self.camera.values[1] = lerp(
                 self.camera.values[1],
-                (minx + (maxx - minx) / 2.0 - 1 - self.gamemap_renderer.gamemap.columns / 2.0) * gamemap_renderer.tileset:getWidth(),
+                (minx + (maxx - minx) / 2.0 - 1 - self.gamemap_renderer.gamemap.columns / 2.0) * self.gamemap_renderer.tileset:getWidth(),
                 dt * self.stiffness
             )
             self.camera.values[2] = lerp(
                 self.camera.values[2],
-                ((miny + (maxy - miny) / 2.0) - 1 - #self.gamemap_renderer.gamemap.layer1 / 2.0) * gamemap_renderer.tileset:getHeight(),
+                ((miny + (maxy - miny) / 2.0) - 1 - #self.gamemap_renderer.gamemap.layer1 / 2.0) * self.gamemap_renderer.tileset:getHeight(),
                 dt * self.stiffness
             )
         end

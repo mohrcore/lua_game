@@ -30,7 +30,8 @@ local SceneMetatable = {
 
 function scene.Scene()
     local this = {
-        camera = vector_mod.Vector{0.0, 0.0}
+        camera = vector_mod.Vector{0.0, 0.0},
+        actors = {}
     }
     setmetatable(this, SceneMetatable)    
     return this

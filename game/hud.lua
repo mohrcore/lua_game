@@ -16,10 +16,15 @@ local HudMetatable = {
             local pts_text = tostring(score)
             if self.pts_font then love.graphics.setFont(self.pts_font) end
             love.graphics.printf({{0.5, 1, 1}, pts_text}, 0, self.top + self.margin, self.right - self.left, "center", 0, self.scale, self.scale)
-            local instances = tostring(player_controller.instance_count)
-            local instances_text = "Instance count: " .. instances
+            local instances = tostring(self.player_controller.instance_count)
+            local instances_text1 = "Instance count: "
+            local instances_text2 = instances
             if self.instances_font then love.graphics.setFont(self.instances_font) end
-            love.graphics.printf({{1, 109/255, 199/255}, instances_text}, 0 + self.margin, self.bottom - self.margin - self.instances_font:getHeight(), self.right - self.left, "left", 0, self.scale, self.scale)
+            local colors = {1, 1, 1}
+            if self.player_controller.instance_count < 1 then
+                colors = {1, 0, 0}
+            end
+            love.graphics.printf({{1, 109/255, 199/255}, instances_text1, colors, instances_text2}, 0 + self.margin, self.bottom - self.margin - self.instances_font:getHeight(), self.right - self.left, "left", 0, self.scale, self.scale)
         end
     }
 }
