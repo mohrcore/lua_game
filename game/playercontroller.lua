@@ -87,9 +87,17 @@ local PlayerControllerMetatable = {
         gamemap = {},
         instances = {},
         instance_count_hm = {},
+        instance_count = 0,
         score = 0,
         init = function(self, position)
             self.instances[position] = true
+            self.instance_count_hm = {}
+            setmetatable(self.instance_count_hm, {
+                __index = function(self, k)
+                    return 0;
+                end,
+            })
+            self.instance_count = 1
         end,
         move = function(self, vec, instance)
             local dx, dy = vec:unpack()
@@ -132,6 +140,7 @@ local PlayerControllerMetatable = {
                 newpositions[clone] = true
             end
             table_ext_mod.mergeSets(self.instances, newpositions)
+            self.instance_count = self.instance_count * 2
         end,
         update = function(self)
             for position, _ in pairs(self.instances) do
@@ -145,6 +154,7 @@ local PlayerControllerMetatable = {
                 if ul_result.destroy == true then
                     self.instances[position] = nil
                     self.instance_count_hm[hashCellPosition(position)] = self.instance_count_hm[hashCellPosition(position)] - 1
+                    self.instance_count = self.instance_count - 1
                 else
                     if ul_result.move then
                         self:move(ul_result.move, position)

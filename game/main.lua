@@ -10,6 +10,7 @@ local gamemap_mod = require "gamemap"
 local playercontroller_mod = require "playercontroller"
 local playerrenderer_mod = require "playerrenderer"
 local cameracontroller_mod = require "cameracontroller"
+local hud_mod = require "hud"
 
 function love.conf(t)
     t.console = DEBUG
@@ -52,6 +53,10 @@ function love.load()
     }
     scene:addActor(pr_actor)
     camera_controller = cameracontroller_mod.CameraController(scene.camera, player_controller, gamemap_renderer)
+    camera_controller.stiffness = 1.0
+    hud = hud_mod.Hud(player_controller, 0, 0, ww, wh)
+    hud.pts_font = love.graphics.newFont(RESPATHS["font_gumball"], 96)
+    hud.instances_font = love.graphics.newFont(RESPATHS["font_gumball"], 32)
 end
 
 function love.update(dt)
@@ -67,6 +72,7 @@ end
 
 function love.draw()
     scene:drawActors()
+    hud:draw()
 end
 
 KEY_DOWN = {}

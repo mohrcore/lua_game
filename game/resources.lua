@@ -8,6 +8,7 @@ function resources.configureResPaths()
     RESPATHS["tile_arrow_right"] = "data/img/tiles/arrow_right.png"
     RESPATHS["tile_arrow_up"] = "data/img/tiles/arrow_up.png"
     RESPATHS["tile_star"] = "data/img/tiles/star.png"
+    RESPATHS["font_gumball"] = "data/fonts/gumball/Gumball.ttf"
 end
 
 return resources
